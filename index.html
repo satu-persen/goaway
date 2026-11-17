@@ -3,72 +3,83 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TTS Suku Kata — Suara Sendiri</title>
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="Rekam suku kata dengan suaramu sendiri, susun menjadi kata, lalu ekspor sebagai audio WAV." />
+  <title>GoAway — TTS Suku Kata</title>
   <link rel="stylesheet" href="/src/style.css" />
 </head>
 <body>
-  <div class="container">
+  <main class="container">
     <header>
-      <h1>🎙️ TTS Suku Kata</h1>
-      <p class="subtitle">
-        Rekam suaramu per suku kata, lalu susun jadi kalimat.
-        Semua diproses di browser — tidak ada data yang diunggah.
-      </p>
+      <h1>🎙️ GoAway</h1>
+      <p class="subtitle">Rekam suaramu per suku kata, susun menjadi kata atau kalimat, lalu ekspor sebagai audio. Semua diproses secara lokal di browser.</p>
     </header>
 
-    <div class="info-box">
-      <h3>💡 Tentang huruf "e"</h3>
-      <p>Bahasa Indonesia punya 2 bunyi "e":</p>
+    <section class="info-box">
+      <h2>Tentang bunyi huruf “e”</h2>
+      <p>Bahasa Indonesia punya dua bunyi “e”:</p>
       <ul>
-        <li><b>e pepet</b> (lemah) — seperti "emas", "berani", "kecil"</li>
-        <li><b>E tegas</b> (jelas) — seperti "enak", "bebek", "meja"</li>
+        <li><b>e pepet</b> — seperti “emas”, “berani”, “kecil”.</li>
+        <li><b>E tegas</b> — seperti “enak”, “bebek”, “meja”.</li>
       </ul>
-      <p>Saat menulis teks, pakai <code>e</code> kecil untuk pepet, <code>E</code> besar untuk tegas.</p>
-    </div>
+      <p>Saat menyusun teks, gunakan <code>e</code> kecil untuk pepet dan <code>E</code> besar untuk bunyi tegas.</p>
+    </section>
 
     <section class="card">
       <div class="section-header">
-        <h2>1. Rekam Suara</h2>
-        <button id="clear-all" class="btn btn-danger btn-small">Hapus Semua</button>
+        <h2>1. Rekam suara</h2>
+        <button id="clear-all" class="btn btn-danger btn-small">Hapus Semua Rekaman</button>
       </div>
-      <p class="hint">
-        <b>Saran tes cepat:</b> rekam <code>a</code>, <code>i</code>, <code>u</code>,
-        <code>e</code>, <code>o</code>, <code>ma</code>, <code>ka</code>,
-        <code>na</code>, <code>si</code>, <code>ta</code> — lalu coba ketik
-        <code>ma-ka-na-si</code>.
-        Klik tombol, ucapkan, rekaman berhenti otomatis dalam 2 detik.
-      </p>
+      <p class="hint">Klik Rekam, ucapkan suku katanya, lalu tekan Stop. Kamu juga bisa memilih durasi otomatis.</p>
+      <div class="mic-tools">
+        <button id="check-mic" class="btn btn-secondary">Periksa Mikrofon</button>
+        <label for="record-duration">Durasi otomatis</label>
+        <select id="record-duration">
+          <option value="0">Manual</option>
+          <option value="2">2 detik</option>
+          <option value="3">3 detik</option>
+          <option value="5">5 detik</option>
+          <option value="8">8 detik</option>
+        </select>
+      </div>
+      <p id="mic-status" class="status-note" aria-live="polite">Memeriksa dukungan mikrofon…</p>
+      <p id="recording-time" class="recording-time" aria-live="polite"></p>
       <div id="progress-container">
         <div id="progress-bar"><div id="progress-fill"></div></div>
         <span id="progress-text">0 / 0</span>
       </div>
-      <input id="search" type="text" placeholder="🔍 Cari suku kata..." />
+      <input id="search" type="search" placeholder="Cari suku kata…" autocomplete="off" />
       <div id="syllable-grid"></div>
       <div class="custom-add">
-        <input id="custom-input" type="text" placeholder="Tambah suku kata sendiri (mis: ra, nga)" maxlength="6" />
+        <input id="custom-input" type="text" placeholder="Tambah suku kata (misalnya: ra, nga)" maxlength="8" />
         <button id="add-custom" class="btn">+ Tambah</button>
       </div>
     </section>
 
     <section class="card">
-      <h2>2. Susun & Ucapkan</h2>
-      <p class="hint">
-        Pisahkan suku kata dengan tanda hubung atau spasi.
-        Contoh: <code>ba-pa-ku ma-ka-n na-si</code>.
-      </p>
+      <h2>2. Susun dan ucapkan</h2>
+      <p class="hint">Pisahkan suku kata dengan spasi atau tanda hubung. Contoh: <code>ma-ka-na-si</code>.</p>
       <textarea id="text-input" placeholder="ma-ka-na-si" rows="3"></textarea>
       <div class="action-row">
         <button id="speak-btn" class="btn btn-primary">🔊 Ucapkan</button>
         <button id="download-btn" class="btn btn-secondary" disabled>⬇️ Unduh WAV</button>
       </div>
-      <div id="output-status"></div>
-      <audio id="audio-player" controls hidden></audio>
+      <p id="output-status" aria-live="polite"></p>
+      <audio id="audio-player" controls preload="none" hidden></audio>
     </section>
 
-    <footer>
-      <p>Web Audio API + IndexedDB. Rekaman tersimpan lokal di browser kamu.</p>
-    </footer>
-  </div>
+    <section class="card">
+      <h2>3. Cadangkan rekaman</h2>
+      <p class="hint">Rekaman disimpan di browser perangkat ini. Ekspor backup JSON sebelum membersihkan data browser atau pindah perangkat.</p>
+      <div class="action-row">
+        <button id="export-backup" class="btn btn-secondary">⬇️ Ekspor Backup</button>
+        <button id="import-backup" class="btn btn-secondary">⬆️ Impor Backup</button>
+        <input id="backup-file" type="file" accept=".json,application/json" hidden />
+      </div>
+    </section>
+
+    <footer><p>GoAway · Web Audio API + IndexedDB · Audio tidak diunggah ke server.</p></footer>
+  </main>
   <script type="module" src="/src/main.js"></script>
 </body>
-  </html>
+</html>
