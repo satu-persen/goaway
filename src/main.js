@@ -1,3 +1,4 @@
+
 // ============ KONFIGURASI ============
 const CONSONANTS = ['b', 'k', 'l', 'm', 'n', 'p', 's', 't'];
 const VOWEL_DEFS = [
@@ -37,7 +38,7 @@ function buildSyllableList() {
 const SYLLABLES = buildSyllableList();
 
 // ============ STATE ============
-const library = {}; // key -> AudioBuffer
+const library = {};
 let activeRecording = null;
 let starting = false;
 let audioContext = null;
@@ -82,6 +83,7 @@ async function loadAllBlobs() {
     const reqKeys = store.getAllKeys();
     const reqVals = store.getAll();
     let keys = null, vals = null;
+
     const check = () => {
       if (keys && vals) {
         const map = {};
@@ -89,6 +91,7 @@ async function loadAllBlobs() {
         resolve(map);
       }
     };
+
     reqKeys.onsuccess = () => { keys = reqKeys.result; check(); };
     reqVals.onsuccess = () => { vals = reqVals.result; check(); };
     tx.onerror = () => reject(tx.error);
@@ -109,14 +112,20 @@ async function clearAllBlobs() {
 function trimSilence(buffer, threshold = 0.02, padding = 200) {
   const data = buffer.getChannelData(0);
   let start = 0, end = data.length - 1;
+
   while (start < data.length && Math.abs(data[start]) < threshold) start++;
   while (end > start && Math.abs(data[end]) < threshold) end--;
+
   if (start >= end) return buffer;
+
   start = Math.max(0, start - padding);
   end = Math.min(data.length - 1, end + padding);
+
   const ctx = getAudioContext();
   const out = ctx.createBuffer(1, end - start + 1, buffer.sampleRate);
-  out.getChannelData(0).set(buffer.getChannelData(0).subarray(start, end + 1));
+  out.getChannelData(0).set(
+    buffer.getChannelData(0).subarray(start, end + 1)
+  );
   return out;
 }
 
@@ -126,6 +135,7 @@ function concatBuffers(buffers) {
   const out = ctx.createBuffer(1, total, buffers[0].sampleRate);
   const ch = out.getChannelData(0);
   let offset = 0;
+
   for (const b of buffers) {
     ch.set(b.getChannelData(0), offset);
     offset += b.length;
@@ -140,7 +150,12 @@ function audioBufferToWav(buffer) {
   const dataLen = samples.length * 2;
   const buf = new ArrayBuffer(44 + dataLen);
   const view = new DataView(buf);
-  const writeStr = (o, s) => { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); };
+
+  const writeStr = (o, s) => {
+    for (let i = 0; i < s.length; i++) {
+      view.setUint8(o + i, s.charCodeAt(i));
+    }
+  };
 
   writeStr(0, 'RIFF');
   view.setUint32(4, 36 + dataLen, true);
@@ -162,6 +177,7 @@ function audioBufferToWav(buffer) {
     view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
     off += 2;
   }
+
   return new Blob([buf], { type: 'audio/wav' });
 }
 
@@ -169,6 +185,7 @@ function audioBufferToWav(buffer) {
 function renderGrid() {
   const grid = document.getElementById('syllable-grid');
   grid.innerHTML = '';
+
   for (const s of SYLLABLES) {
     const item = document.createElement('div');
     item.className = 'syllable-item' + (library[s.key] ? ' recorded' : '');
@@ -176,11 +193,13 @@ function renderGrid() {
     grid.appendChild(item);
     fillItem(item, s);
   }
+
   updateProgress();
 }
 
 function fillItem(item, s) {
   item.innerHTML = '';
+
   const label = document.createElement('div');
   label.className = 'syllable-label';
   label.textContent = s.display;
@@ -215,12 +234,14 @@ function updateProgress() {
   const total = SYLLABLES.length;
   const done = SYLLABLES.filter((s) => library[s.key]).length;
   document.getElementById('progress-text').textContent = `${done} / ${total}`;
-  document.getElementById('progress-fill').style.width = `${(done / total) * 100}%`;
+  document.getElementById('progress-fill').style.width =
+    `${(done / total) * 100}%`;
 }
 
 function playBuffer(buffer) {
   const ctx = getAudioContext();
   if (ctx.state === 'suspended') ctx.resume();
+
   const src = ctx.createBufferSource();
   src.buffer = buffer;
   src.connect(ctx.destination);
@@ -234,32 +255,111 @@ async function handleRecord(key, button, item) {
     else alert('Selesaikan rekaman lain dulu.');
     return;
   }
+
   if (starting) return;
+
+  if (!window.isSecureContext) {
+    alert('Mikrofon hanya bisa digunakan melalui HTTPS atau localhost. Buka situs dengan alamat HTTPS.');
+    return;
+  }
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert('Browser ini tidak mendukung akses mikrofon. Coba buka melalui Chrome versi terbaru.');
+    return;
+  }
+
+  if (typeof MediaRecorder === 'undefined') {
+    alert('Browser ini belum mendukung perekaman audio.');
+    return;
+  }
+
   starting = true;
   button.disabled = true;
-  button.textContent = '⏳ Izin...';
+  button.textContent = '⏳ Meminta izin...';
+
+  let stream = null;
 
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : MediaRecorder.isTypeSupported('audio/webm')
-      ? 'audio/webm'
-      : 'audio/mp4';
-    const recorder = new MediaRecorder(stream, { mimeType: mime });
+    // Meminta izin mikrofon langsung dari aksi tombol.
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    let mime = '';
+
+    if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+      mime = 'audio/webm;codecs=opus';
+    } else if (MediaRecorder.isTypeSupported('audio/webm')) {
+      mime = 'audio/webm';
+    } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+      mime = 'audio/mp4';
+    }
+
+    const recorder = mime
+      ? new MediaRecorder(stream, { mimeType: mime })
+      : new MediaRecorder(stream);
+
+    mime = recorder.mimeType || mime || 'audio/webm';
+
     const chunks = [];
-    recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) chunks.push(e.data);
+    };
+
+    recorder.onerror = (event) => {
+      console.error('MediaRecorder error:', event.error || event);
+      alert('Terjadi masalah saat merekam audio.');
+    };
 
     const timer = setTimeout(() => stopRecording(), 2000);
+
     recorder.start();
-    activeRecording = { key, recorder, stream, chunks, timer, item, mime };
+
+    activeRecording = {
+      key,
+      recorder,
+      stream,
+      chunks,
+      timer,
+      item,
+      mime
+    };
+
     button.textContent = '⏹️ Stop';
     button.classList.add('recording');
     button.disabled = false;
+
   } catch (err) {
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+
     button.textContent = '🎙️ Rekam';
+    button.classList.remove('recording');
     button.disabled = false;
-    alert('Gagal akses mikrofon: ' + err.message);
+
+    let message = err.message || 'Kesalahan tidak diketahui.';
+
+    if (
+      err.name === 'NotAllowedError' ||
+      err.name === 'PermissionDeniedError'
+    ) {
+      message = 'Izin mikrofon ditolak. Izinkan mikrofon untuk situs ini melalui pengaturan izin situs di browser.';
+    } else if (
+      err.name === 'NotFoundError' ||
+      err.name === 'DevicesNotFoundError'
+    ) {
+      message = 'Mikrofon tidak ditemukan pada perangkat ini.';
+    } else if (
+      err.name === 'NotReadableError' ||
+      err.name === 'TrackStartError'
+    ) {
+      message = 'Mikrofon sedang digunakan aplikasi lain atau tidak dapat dibuka.';
+    } else if (err.name === 'SecurityError') {
+      message = 'Akses mikrofon diblokir. Pastikan situs dibuka melalui HTTPS.';
+    }
+
+    alert('Gagal mengakses mikrofon: ' + message);
+
   } finally {
     starting = false;
   }
@@ -267,27 +367,35 @@ async function handleRecord(key, button, item) {
 
 function stopRecording() {
   if (!activeRecording) return;
+
   const rec = activeRecording;
   activeRecording = null;
   clearTimeout(rec.timer);
 
   rec.recorder.onstop = async () => {
     rec.stream.getTracks().forEach((t) => t.stop());
+
     try {
       const blob = new Blob(rec.chunks, { type: rec.mime });
       const arrayBuf = await blob.arrayBuffer();
       const buf = await getAudioContext().decodeAudioData(arrayBuf);
+
       library[rec.key] = buf;
       await saveBlob(rec.key, blob);
+
       const s = SYLLABLES.find((x) => x.key === rec.key);
       rec.item.classList.add('recorded');
+
       if (s) fillItem(rec.item, s);
+
       updateProgress();
+
     } catch (err) {
       console.error(err);
       alert('Gagal memproses rekaman: ' + err.message);
     }
   };
+
   rec.recorder.stop();
 }
 
@@ -303,27 +411,44 @@ function setStatus(msg, type = '') {
 }
 
 function handleSpeak() {
-  const tokens = parseInput(document.getElementById('text-input').value);
+  const tokens = parseInput(
+    document.getElementById('text-input').value
+  );
+
   const player = document.getElementById('audio-player');
   const downloadBtn = document.getElementById('download-btn');
 
-  if (!tokens.length) return setStatus('Tulis teks dulu.', 'error');
+  if (!tokens.length) {
+    return setStatus('Tulis teks dulu.', 'error');
+  }
 
   const missing = [...new Set(tokens.filter((t) => !library[t]))];
+
   if (missing.length) {
-    return setStatus(`Suku kata belum direkam: ${missing.join(', ')}`, 'error');
+    return setStatus(
+      `Suku kata belum direkam: ${missing.join(', ')}`,
+      'error'
+    );
   }
 
   try {
     const buffers = tokens.map((t) => trimSilence(library[t]));
     const merged = concatBuffers(buffers);
+
     lastWav = audioBufferToWav(merged);
+
     const url = URL.createObjectURL(lastWav);
     player.src = url;
     player.hidden = false;
     player.play();
+
     downloadBtn.disabled = false;
-    setStatus(`✓ Berhasil! ${tokens.length} suku kata digabung.`, 'success');
+
+    setStatus(
+      `✓ Berhasil! ${tokens.length} suku kata digabung.`,
+      'success'
+    );
+
   } catch (err) {
     console.error(err);
     setStatus('Error: ' + err.message, 'error');
@@ -332,11 +457,14 @@ function handleSpeak() {
 
 function handleDownload() {
   if (!lastWav) return;
+
   const url = URL.createObjectURL(lastWav);
   const a = document.createElement('a');
+
   a.href = url;
   a.download = `tts-${Date.now()}.wav`;
   a.click();
+
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
@@ -344,12 +472,20 @@ function handleDownload() {
 function handleAddCustom() {
   const input = document.getElementById('custom-input');
   const val = input.value.trim();
+
   if (!val) return;
+
   if (SYLLABLES.some((s) => s.key === val)) {
     alert('Suku kata sudah ada.');
     return;
   }
-  SYLLABLES.push({ key: val, display: val, hint: '(kustom)' });
+
+  SYLLABLES.push({
+    key: val,
+    display: val,
+    hint: '(kustom)'
+  });
+
   input.value = '';
   renderGrid();
 }
@@ -358,46 +494,84 @@ function handleAddCustom() {
 async function init() {
   renderGrid();
 
+  // Pasang handler lebih dulu agar aplikasi tetap bisa dipakai
+  // jika IndexedDB gagal dimuat.
+  document.getElementById('speak-btn').onclick = handleSpeak;
+  document.getElementById('download-btn').onclick = handleDownload;
+  document.getElementById('add-custom').onclick = handleAddCustom;
+
+  document.getElementById('custom-input').addEventListener(
+    'keydown',
+    (e) => {
+      if (e.key === 'Enter') handleAddCustom();
+    }
+  );
+
+  document.getElementById('search').addEventListener('input', (e) => {
+    const q = e.target.value.toLowerCase();
+
+    document.querySelectorAll('.syllable-item').forEach((it) => {
+      it.style.display = it.dataset.key.toLowerCase().includes(q)
+        ? ''
+        : 'none';
+    });
+  });
+
+  document.getElementById('clear-all').onclick = async () => {
+    if (!confirm('Hapus semua rekaman? Tidak bisa dibatalkan.')) return;
+
+    try {
+      await clearAllBlobs();
+
+      for (const k of Object.keys(library)) {
+        delete library[k];
+      }
+
+      renderGrid();
+
+      document.getElementById('audio-player').hidden = true;
+      document.getElementById('download-btn').disabled = true;
+
+      setStatus('');
+
+    } catch (err) {
+      console.error('Gagal menghapus rekaman:', err);
+      alert('Gagal menghapus data rekaman: ' + err.message);
+    }
+  };
+
   try {
     const saved = await loadAllBlobs();
     const ctx = getAudioContext();
+
     for (const [key, blob] of Object.entries(saved)) {
       try {
         const arrayBuf = await blob.arrayBuffer();
         library[key] = await ctx.decodeAudioData(arrayBuf);
+
         if (!SYLLABLES.some((s) => s.key === key)) {
-          SYLLABLES.push({ key, display: key, hint: '(dimuat)' });
+          SYLLABLES.push({
+            key,
+            display: key,
+            hint: '(dimuat)'
+          });
         }
+
       } catch (err) {
         console.warn('Gagal decode', key, err);
       }
     }
+
     renderGrid();
+
   } catch (err) {
     console.warn('Gagal memuat IndexedDB:', err);
-  }
 
-  document.getElementById('speak-btn').onclick = handleSpeak;
-  document.getElementById('download-btn').onclick = handleDownload;
-  document.getElementById('add-custom').onclick = handleAddCustom;
-  document.getElementById('custom-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleAddCustom();
-  });
-  document.getElementById('search').addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    document.querySelectorAll('.syllable-item').forEach((it) => {
-      it.style.display = it.dataset.key.toLowerCase().includes(q) ? '' : 'none';
-    });
-  });
-  document.getElementById('clear-all').onclick = async () => {
-    if (!confirm('Hapus semua rekaman? Tidak bisa dibatalkan.')) return;
-    await clearAllBlobs();
-    for (const k of Object.keys(library)) delete library[k];
-    renderGrid();
-    document.getElementById('audio-player').hidden = true;
-    document.getElementById('download-btn').disabled = true;
-    setStatus('');
-  };
+    setStatus(
+      'Penyimpanan lokal tidak dapat dibuka. Fitur rekam mungkin tidak tersimpan.',
+      'error'
+    );
+  }
 }
 
 init();
