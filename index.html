@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TTS Suku Kata — Suara Sendiri</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎙️ TTS Suku Kata</h1>
+      <p class="subtitle">
+        Rekam suaramu per suku kata, lalu susun jadi kalimat.
+        Semua diproses di browser — tidak ada data yang diunggah.
+      </p>
+    </header>
+
+    <div class="info-box">
+      <h3>💡 Tentang huruf "e"</h3>
+      <p>Bahasa Indonesia punya 2 bunyi "e":</p>
+      <ul>
+        <li><b>e pepet</b> (lemah) — seperti "emas", "berani", "kecil"</li>
+        <li><b>E tegas</b> (jelas) — seperti "enak", "bebek", "meja"</li>
+      </ul>
+      <p>Saat menulis teks, pakai <code>e</code> kecil untuk pepet, <code>E</code> besar untuk tegas.</p>
+    </div>
+
+    <section class="card">
+      <div class="section-header">
+        <h2>1. Rekam Suara</h2>
+        <button id="clear-all" class="btn btn-danger btn-small">Hapus Semua</button>
+      </div>
+      <p class="hint">
+        <b>Saran tes cepat:</b> rekam <code>a</code>, <code>i</code>, <code>u</code>,
+        <code>e</code>, <code>o</code>, <code>ma</code>, <code>ka</code>,
+        <code>na</code>, <code>si</code>, <code>ta</code> — lalu coba ketik
+        <code>ma-ka-na-si</code>.
+        Klik tombol, ucapkan, rekaman berhenti otomatis dalam 2 detik.
+      </p>
+      <div id="progress-container">
+        <div id="progress-bar"><div id="progress-fill"></div></div>
+        <span id="progress-text">0 / 0</span>
+      </div>
+      <input id="search" type="text" placeholder="🔍 Cari suku kata..." />
+      <div id="syllable-grid"></div>
+      <div class="custom-add">
+        <input id="custom-input" type="text" placeholder="Tambah suku kata sendiri (mis: ra, nga)" maxlength="6" />
+        <button id="add-custom" class="btn">+ Tambah</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. Susun & Ucapkan</h2>
+      <p class="hint">
+        Pisahkan suku kata dengan tanda hubung atau spasi.
+        Contoh: <code>ba-pa-ku ma-ka-n na-si</code>.
+      </p>
+      <textarea id="text-input" placeholder="ma-ka-na-si" rows="3"></textarea>
+      <div class="action-row">
+        <button id="speak-btn" class="btn btn-primary">🔊 Ucapkan</button>
+        <button id="download-btn" class="btn btn-secondary" disabled>⬇️ Unduh WAV</button>
+      </div>
+      <div id="output-status"></div>
+      <audio id="audio-player" controls hidden></audio>
+    </section>
+
+    <footer>
+      <p>Web Audio API + IndexedDB. Rekaman tersimpan lokal di browser kamu.</p>
+    </footer>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+  </html>
