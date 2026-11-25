@@ -1,0 +1,374 @@
+<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Animasi Tulang</title><style>
+:root{--bg:#f4f1ea;--pn:#fff;--tx:#1d1b16;--mt:#6b665a;--ac:#e8603c;--ln:#d9d3c4;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17161a;--pn:#222127;--tx:#eeeaf2;--mt:#9c98a8;--ln:#3a3842}}
+:root[data-theme="dark"]{--bg:#17161a;--pn:#222127;--tx:#eeeaf2;--mt:#9c98a8;--ln:#3a3842}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px system-ui,sans-serif;overflow:hidden}
+#tl{width:100%}canvas{display:block;border:1px solid var(--ln);border-radius:10px;touch-action:none;background:#fff}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;align-items:center}
+button,select,input,textarea{font:inherit;color:var(--tx)}
+button{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:8px 10px;min-height:40px;cursor:pointer}
+button.on{background:var(--ac);border-color:var(--ac);color:#fff}
+input[type=text],input[type=password],input[type=number],select,textarea{background:var(--pn);border:1px solid var(--ln);border-radius:8px;padding:8px;min-height:40px;box-sizing:border-box}
+input[type=text],input[type=password]{flex:1;min-width:0}input[type=range]{flex:1;min-width:90px}input[type=color]{width:44px;height:40px;padding:2px;background:var(--pn);border:1px solid var(--ln);border-radius:8px}
+.pn{display:none;background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:8px}.pn.on{display:block}
+.pn label{display:flex;gap:8px;align-items:center;margin:6px 0}.pn label span{width:78px;color:var(--mt)}
+html,body{height:100%}
+#app{display:flex;flex-direction:column;height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));max-width:1500px;margin:auto}
+#main{flex:0 0 auto;padding:8px 8px 0}#side{flex:1;min-height:0;overflow:auto;padding:0 8px 8px;-webkit-overflow-scrolling:touch}
+#cvw{position:relative;margin:0 auto;width:fit-content;line-height:0}
+#ov{position:absolute;right:6px;bottom:6px;display:flex;gap:4px;line-height:1}#ov button{min-height:34px;min-width:34px;padding:4px 8px;border-radius:17px;opacity:.92}
+#pv{position:absolute;left:6px;top:6px;width:30%;max-width:210px;height:auto;aspect-ratio:16/9;border:2px solid var(--ac);border-radius:8px;display:none;pointer-events:none}
+.sc{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.sc>*{flex:none}
+@media(orientation:landscape) and (min-width:700px){#app{flex-direction:row}#main{flex:1 1 0;min-width:0;overflow:auto;padding-bottom:8px}#side{flex:0 0 340px;padding-top:8px}}
+@media(max-height:480px){button,input[type=text],select{min-height:32px;padding:4px 8px}.row{margin:4px 0}}
+body.fs #side{display:none}body.fs #app{flex-direction:column}body.fs #main{flex:1}
+small{color:var(--mt)}#fr{margin-left:auto;font-variant-numeric:tabular-nums}
+#ts{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#222;color:#fff;padding:9px 14px;border-radius:20px;opacity:0;transition:.25s;pointer-events:none;z-index:9}
+.ai-btn{background:linear-gradient(135deg,#6366f1,#e8603c);color:#fff;border:none;font-weight:600}
+</style></head><body><div id="app"><div id="main">
+<div class="row"><input type="text" id="nm" value="Proyek baru"><button id="un">↶</button><button id="re">↷</button><button id="aib" class="ai-btn">✨ AI</button></div>
+<div id="cvw"><canvas id="st" width="960" height="540"></canvas><canvas id="pv" width="320" height="180"></canvas><div id="ov"><button id="pvb" class="on" title="Pratinjau">▣</button><button id="zi">＋</button><button id="zo">−</button><button id="zr">⌖</button><button id="fs">⛶</button></div></div>
+<div class="row"><button id="pl">▶</button><button id="rc">⏺ Rekam</button><button id="lp" class="on">🔁</button><button id="ka">◆ Kunci</button><button id="kd">✖ Kunci</button><span id="fr">0/48</span></div>
+<canvas id="tl" width="960" height="56" style="height:56px"></canvas>
+<div class="row sc" id="tools"><button data-t="pose" class="on">✋ Pose</button><button data-t="bone">🦴 Tulang</button><button data-t="draw">✏️ Gambar</button><button data-t="shape">🔷 Bentuk</button><button data-t="path">〰 Jalur</button><button data-t="pan">✥ Geser</button><button id="ikb">IK</button><button id="onb" class="on">Onion</button><button id="grb" class="on">Grid</button></div><div class="row sc" id="qa"><small>Tambah:</small><button data-sh="rect">▭ Kotak</button><button data-sh="circ">● Bulat</button><button data-sh="tri">▲</button><button data-sh="star">★</button><button data-sh="dia">◆</button><button data-sh="hex">⬢</button><button id="imb">🖼 Foto</button><input type="file" id="imgf" accept="image/*" hidden></div></div><div id="side">
+<div class="row sc" id="tabs"><button data-p="p1" class="on">Karakter</button><button data-p="p2">Tulang</button><button data-p="p3">Gerakan</button><button data-p="p4">Proyek</button><button data-p="p5">Layer</button><button data-p="p6">Bentuk</button><button data-p="p7">✨ AI</button></div>
+<div class="pn on" id="p1"><div class="row"><button data-tp="hum">🧍 Manusia</button><button data-tp="rob">🤖 Robot</button><button data-tp="cat">🐱 Kucing</button><button data-tp="kos">⬜ Kosong</button></div>
+<label>Latar <input type="color" id="bgc" value="#fbf8f1"></label>
+<label><span>Kuas</span><input type="color" id="bc" value="#222222"><input type="range" id="bw" min="1" max="30" value="4"></label>
+<div class="row"><button id="cs">Hapus coretan tulang terpilih</button></div>
+<small>Template bisa diubah: ganti warna, bentuk, panjang tulang, tambah tulang baru, atau gambar sendiri di atas tulang.</small></div>
+<div class="pn" id="p2"><label><span>Nama</span><input type="text" id="bn"></label>
+<label><span>Panjang</span><input type="range" id="bl" min="5" max="200"></label><label><span>Tebal</span><input type="range" id="bz" min="2" max="80"></label>
+<label><span>Sambung di</span><input type="range" id="bt" min="0" max="1" step=".05"></label>
+<label><span>Warna</span><input type="color" id="bcl"><select id="bs"><option value="cap">Kapsul</option><option value="circ">Lingkaran</option><option value="rect">Kotak</option><option value="none">Tanpa bentuk</option></select></label>
+<div class="row"><button id="bd">🗑 Hapus tulang</button></div><small>Alat Tulang: seret dari ujung tulang terpilih untuk menambah tulang anak.</small></div>
+<div class="pn" id="p3"><div class="row"><button data-pr="jalan">🚶 Jalan</button><button data-pr="lambai">👋 Lambai</button><button data-pr="lompat">🦘 Lompat</button><button data-pr="napas">😮‍💨 Napas</button></div>
+<label><span>Gerak</span><select id="es"><option value="1">Halus</option><option value="0">Linear</option></select></label>
+<label><span>Kecepatan</span><select id="sp"><option>0.5</option><option selected>1</option><option>2</option></select></label>
+<label><span>FPS</span><select id="fp"><option>12</option><option selected>24</option><option>30</option></select><span>Durasi</span><input type="number" id="ln" min="8" max="600" value="48" style="width:80px"></label>
+<div class="row"><button id="spr">🎀 Pegas</button><button id="lpm">♾ Loop mulus</button><button id="mir">🪞 Cermin</button></div><small>Pegas: tulang terpilih bergoyang menyusul gerakan (ekor, rambut, antena). Jalur: pilih alat 〰, gambar garis, dan karakter berjalan mengikuti garis memakai pola gerak yang sudah ada. Preset mulai dari posisi jarum dan menimpa kunci di frame yang sama saja.</small><div class="row"><button id="ca">Hapus semua kunci (layer ini)</button></div><small>Preset butuh tulang bernama Badan, Lengan A/B, Paha A/B, Betis A/B (template Manusia dan Robot). Rekam: tekan ⏺ lalu gerakkan tulang secara langsung.</small></div>
+<div class="pn" id="p4"><div class="row"><button id="sv">💾 Simpan proyek</button><select id="pls" style="flex:1"></select></div>
+<div class="row"><button id="ld">Muat</button><button id="dl">Hapus</button><button id="nw">Baru</button></div>
+<div class="row"><button id="xj">Ekspor JSON</button><button id="impb">Impor JSON</button><input type="file" id="imp" hidden></div>
+<div class="row"><button id="xv">🎬 Ekspor video</button><button id="xp">🖼 Simpan PNG</button></div><small>Proyek tersimpan otomatis di browser ini. Ekspor video merekam animasi sekali putar.</small></div>
+<div class="pn" id="p5"><div id="lyl"></div><div class="row"><button id="la">➕ Layer</button><button id="lc">⎘ Duplikat</button><button id="lx">🗑 Hapus</button></div><label><span>Nama</span><input type="text" id="lnm"></label><small>Tiap layer punya tulang dan animasi sendiri. Pose, gambar, rekam, dan preset bekerja di layer terpilih; layer lain tetap bermain. Template karakter dimuat ke layer terpilih.</small></div>
+<div class="pn" id="p6"><div class="row" id="shp"><button data-sh="rect">▭ Kotak</button><button data-sh="circ">● Lingkaran</button><button data-sh="tri">▲ Segitiga</button><button data-sh="star">★ Bintang</button><button data-sh="dia">◆ Belah ketupat</button><button data-sh="hex">⬢ Segi enam</button></div>
+<div class="row" id="ell"></div>
+<label><span>Warna</span><input type="color" id="ecl" value="#e8603c"></label>
+<label><span>Putar</span><input type="range" id="er" min="-180" max="180" value="0"></label><label><span>Lebar</span><input type="range" id="ew" min="4" max="600" value="44"></label><label><span>Tinggi</span><input type="range" id="eh" min="4" max="600" value="44"></label>
+<div class="row"><button id="edu">⎘ Duplikat</button><button id="eup">⬆ Depan</button><button id="edn">⬇ Belakang</button><button id="edl">🗑 Hapus</button></div>
+<label><span>Skala gerak</span><input type="range" id="bsc" min="20" max="300" value="100"></label>
+<small>Bentuk menempel pada tulang terpilih dan ikut bergerak bersamanya. Pakai alat 🔷 Bentuk: seret bentuk untuk menggeser, titik atas untuk memutar, titik sudut untuk mengubah ukuran. Kotak dengan lebar dan tinggi sama menjadi persegi. Skala gerak mengubah ukuran tulang beserta bentuk dan anak tulangnya di frame saat ini, lalu dianimasikan antar kunci.</small></div>
+<div class="pn" id="p7">
+<label><span>API Key</span><input type="password" id="gkey" placeholder="Tempel Gemini API Key..."></label>
+<label><span>Mode</span><select id="gmode"><option value="both">Model + Animasi Baru</option><option value="anim">Animasikan Model yang Ada</option></select></label>
+<div class="row"><textarea id="gprompt" rows="3" style="width:100%;resize:vertical" placeholder="Contoh: Burung elang mengepakkan sayap terbang di langit, atau Dinosaurus T-Rex berjalan mengaum..."></textarea></div>
+<div class="row"><button id="ggen" class="ai-btn" style="flex:1">✨ Buat dengan Gemini AI</button></div>
+<small>API Key disimpan secara lokal di browser ini. Gunakan mode "Animasikan Model yang Ada" jika ingin menggerakkan karakter yang sudah tampil di layar.</small>
+</div>
+</div></div><div id="ts"></div>
+<script>
+const $=s=>document.querySelector(s),D=Math.PI/180,st=$("#st"),tl=$("#tl"),t2=tl.getContext("2d");let c=st.getContext("2d");
+let pvOn=true,se=-1,seb=-1,V={z:1,x:0,y:0},pts=new Map(),pin=null,li=0,LY,P,sel=-1,cur=0,playing=false,loopOn=true,tool="pose",rec=null,live=null,drag=null,ik=false,onion=true,grid=true,exporting=false,expMR=null,ks=null,hist=[],hi=-1,last=0,dl=null,brush={c:"#222222",w:4},tt=0;
+const LS={g:k=>{try{return localStorage.getItem(k)}catch(e){return null}},s:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){toast("Penyimpanan ditolak atau penuh")}},d:k=>{try{localStorage.removeItem(k)}catch(e){}},k:()=>{try{return Object.keys(localStorage)}catch(e){return[]}}};
+function toast(s){const t=$("#ts");t.textContent=s;t.style.opacity=1;clearTimeout(tt);tt=setTimeout(()=>t.style.opacity=0,2500)}
+const NL=n=>({name:n,vis:1,ox:480,oy:330,bones:[],keys:[]}),blank=()=>({name:"Proyek baru",fps:24,len:48,bg:"#fbf8f1",ease:1,speed:1,layers:[NL("Layer 1")]});
+const up=j=>{const q=Object.assign(blank(),j);if(!j.layers)delete q.layers;return q};
+function norm(){if(!P.layers){P.layers=[{name:"Layer 1",vis:1,ox:P.ox||480,oy:P.oy||330,bones:P.bones||[],keys:P.keys||[]}];delete P.bones;delete P.keys;delete P.ox;delete P.oy}}
+function setP(q){if(q.imgs){for(const k in q.imgs)IMGS[k]={url:q.imgs[k]};delete q.imgs}P=q;norm();P.layers.forEach(l=>l.bones.forEach(b=>{b.el=b.el||[];b.st=b.st||[]}));li=Math.min(li,P.layers.length-1);LY=P.layers[li];sel=Math.min(sel,LY.bones.length-1)}
+const withL=(l,f)=>{const o=LY;LY=l;try{f()}finally{LY=o}};
+const HUM=[["Badan",-1,70,-90,30,"#4f8cff","cap",1],["Kepala",0,26,0,46,"#ffd2a6","circ",1],["Lengan A",0,40,-160,12,"#ffd2a6","cap",.95],["Siku A",2,38,10,11,"#ffd2a6","cap",1],["Lengan B",0,40,160,12,"#ffd2a6","cap",.95],["Siku B",4,38,-10,11,"#ffd2a6","cap",1],["Paha A",0,46,-170,16,"#2d3a6e","cap",0],["Betis A",6,46,5,14,"#2d3a6e","cap",1],["Paha B",0,46,170,16,"#2d3a6e","cap",0],["Betis B",8,46,-5,14,"#2d3a6e","cap",1]];
+const TP={hum:()=>mk(HUM,480,330),rob:()=>mk([...HUM.map(r=>[r[0],r[1],r[2],r[3],r[4],r[0]=="Badan"?"#8a97ab":r[0]=="Kepala"?"#b6c0cf":"#6d7a8e","rect",r[7]]),["Antena",1,22,0,4,"#e8603c","cap",1]],480,330),
+cat:()=>mk([["Badan",-1,70,0,38,"#f0a35e","cap",1],["Kepala",0,20,-25,46,"#f0a35e","circ",1],["Telinga A",1,16,-60,12,"#d98a42","cap",.8],["Telinga B",1,16,-110,12,"#d98a42","cap",.8],["Ekor 1",0,30,200,12,"#f0a35e","cap",0],["Ekor 2",4,28,40,10,"#f0a35e","cap",1],["Kaki 1",0,36,90,12,"#d98a42","cap",.9],["Kaki 2",0,36,90,12,"#d98a42","cap",.75],["Kaki 3",0,36,90,12,"#d98a42","cap",.1],["Kaki 4",0,36,90,12,"#d98a42","cap",0]],400,320),kos:()=>blank()};
+function mk(rows,ox,oy){const p=blank(),l=p.layers[0];l.ox=ox;l.oy=oy;l.bones=rows.map(r=>({name:r[0],p:r[1],len:r[2],a:r[3]*D,w:r[4],col:r[5],shape:r[6],t:r[7],el:[],st:r[0]=="Kepala"?[{c:"#222222",w:6,p:[[14,-8]]},{c:"#222222",w:6,p:[[14,8]]},{c:"#c0392b",w:3,p:[[5,-5],[5,5]]}]:[]}));return p}
+function fk(po){const o=[];LY.bones.forEach((b,i)=>{let ox,oy,A,S=po.s&&po.s[i]!=null?po.s[i]:1;if(b.p<0){ox=po.x;oy=po.y;A=po.a[i]}else{const q=o[b.p],pb=LY.bones[b.p];ox=q.ox+Math.cos(q.A)*pb.len*q.S*b.t;oy=q.oy+Math.sin(q.A)*pb.len*q.S*b.t;A=q.A+po.a[i];S*=q.S}o[i]={ox,oy,A,S,tx:ox+Math.cos(A)*b.len*S,ty:oy+Math.sin(A)*b.len*S}});return o}
+function ev(t){const k=LY.keys,a=[],s=[],g=(K,i)=>K.a[i]??LY.bones[i].a,gs=(K,i)=>K.s&&K.s[i]!=null?K.s[i]:1;
+ if(!k.length){LY.bones.forEach((b,i)=>{a[i]=b.a;s[i]=1});return{a,s,x:LY.ox,y:LY.oy}}
+ let p=null,q=null;for(const K of k){if(K.f<=t)p=K;else{q=K;break}}if(!p){p=q;q=null}
+ let u=q?(t-p.f)/(q.f-p.f):0;if(P.ease)u=u*u*(3-2*u);LY.bones.forEach((b,i)=>{const A=g(p,i);a[i]=q?A+(((g(q,i)-A+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI)*u:A;s[i]=q?gs(p,i)+(gs(q,i)-gs(p,i))*u:gs(p,i)});
+ return{a,s,x:q?p.x+(q.x-p.x)*u:p.x,y:q?p.y+(q.y-p.y)*u:p.y}}
+function setKey(f,po){let K=LY.keys.find(k=>k.f==f);if(!K){K={f};LY.keys.push(K);LY.keys.sort((a,b)=>a.f-b.f)}K.a=[...po.a];K.s=[...(po.s||[])];K.x=po.x;K.y=po.y}
+const key=()=>setKey(Math.round(cur),live);
+function shp(E){const w=E.w/2,h=E.h/2;if(E.t=="rect")c.rect(-w,-h,E.w,E.h);else if(E.t=="circ")c.ellipse(0,0,w,h,0,0,7);else if(E.t=="tri"){c.moveTo(0,-h);c.lineTo(w,h);c.lineTo(-w,h);c.closePath()}else if(E.t=="dia"){c.moveTo(0,-h);c.lineTo(w,0);c.lineTo(0,h);c.lineTo(-w,0);c.closePath()}else{const n=E.t=="hex"?6:10;for(let i=0;i<n;i++){const a=i/n*6.283-1.5708,r=E.t=="star"&&i%2?.45:1;c[i?"lineTo":"moveTo"](Math.cos(a)*w*r,Math.sin(a)*h*r)}c.closePath()}}
+function drawBone(b,o){c.save();c.translate(o.ox,o.oy);c.rotate(o.A);c.scale(o.S,o.S);c.fillStyle=c.strokeStyle=b.col;
+ if(b.shape=="cap"){c.lineCap="round";c.lineWidth=b.w;c.beginPath();c.moveTo(0,0);c.lineTo(b.len,0);c.stroke()}else if(b.shape=="circ"){c.beginPath();c.arc(b.len/2,0,b.w/2,0,7);c.fill()}else if(b.shape=="rect")c.fillRect(0,-b.w/2,b.len,b.w);
+ b.el.forEach(E=>{c.save();c.translate(E.x,E.y);c.rotate(E.r);if(E.t=="img"){const im=imgOf(E.src);if(im)c.drawImage(im,-E.w/2,-E.h/2,E.w,E.h)}else{c.fillStyle=E.col;c.beginPath();shp(E);c.fill()}c.restore()});
+ b.st.forEach(s=>{c.strokeStyle=s.c;c.lineWidth=s.w;c.lineCap=c.lineJoin="round";c.beginPath();s.p.forEach((q,i)=>i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]));if(s.p.length==1)c.lineTo(s.p[0][0]+.1,s.p[0][1]);c.stroke()});c.restore()}
+function body(po,al){c.globalAlpha=al;const o=fk(po);LY.bones.forEach((b,i)=>drawBone(b,o[i]));c.globalAlpha=1}
+function skel(po){const o=fk(po);LY.bones.forEach((b,i)=>{const q=o[i];c.strokeStyle=i==sel?"#e8603c":"rgba(30,30,30,.55)";c.lineWidth=i==sel?3:1.5;c.beginPath();c.moveTo(q.ox,q.oy);c.lineTo(q.tx,q.ty);c.stroke();c.fillStyle=i==sel?"#e8603c":"#fff";c.strokeStyle="#333";c.lineWidth=1.5;c.beginPath();c.arc(q.tx,q.ty,6,0,7);c.fill();c.stroke()});if(o[0]){c.fillStyle="#2a7de1";c.fillRect(o[0].ox-7,o[0].oy-7,14,14)}}
+function render(){if(!drag&&!rec)live=ev(cur);c.fillStyle=P.bg;c.fillRect(0,0,960,540);if(!live)return;c.save();c.translate(V.x,V.y);c.scale(V.z,V.z);
+ if(grid&&!exporting){c.strokeStyle="rgba(0,0,0,.07)";c.lineWidth=1;c.beginPath();for(let x=-1440;x<=2400;x+=48){c.moveTo(x,-1000);c.lineTo(x,1600)}for(let y=-1000;y<=1600;y+=48){c.moveTo(-1440,y);c.lineTo(2400,y)}c.stroke()}
+ if(onion&&!exporting&&!playing&&LY.keys.length>1){body(ev(Math.max(0,cur-4)),.16);body(ev(Math.min(P.len-1,cur+4)),.16)}
+ P.layers.forEach(l=>{if(l.vis)withL(l,()=>body(l===LY?live:ev(cur),1))});if(!exporting){c.strokeStyle="rgba(232,96,60,.6)";c.lineWidth=2/V.z;c.strokeRect(0,0,960,540)}if(!exporting&&!playing)skel(live);
+ if(tool=="shape"&&!exporting&&!playing){const E=SE();if(E){const T=elT(sel,E),hh=hdl(T,E);c.strokeStyle="#2a7de1";c.lineWidth=2/V.z;c.save();c.translate(T.cx,T.cy);c.rotate(T.A);c.scale(T.s,T.s);c.strokeRect(-E.w/2,-E.h/2,E.w,E.h);c.restore();[[hh.rx,hh.ry],[hh.sx,hh.sy]].forEach(q=>{c.fillStyle="#fff";c.beginPath();c.arc(q[0],q[1],8/V.z,0,7);c.fill();c.stroke()})}}
+ if(drag&&drag.k=="nb"){const q=drag.p<0?{tx:drag.x0,ty:drag.y0}:fk(live)[drag.p];c.strokeStyle="#e8603c";c.setLineDash([6,5]);c.lineWidth=3;c.beginPath();c.moveTo(q.tx,q.ty);c.lineTo(drag.x,drag.y);c.stroke();c.setLineDash([])}
+ if(drag&&drag.k=="path"){c.strokeStyle="#2a7de1";c.setLineDash([4,5]);c.lineWidth=3/V.z;c.beginPath();drag.p.forEach((q,i)=>i?c.lineTo(q[0],q[1]):c.moveTo(q[0],q[1]));c.stroke();c.setLineDash([])}
+ c.restore();
+ if(rec){c.fillStyle="#d22";c.beginPath();c.arc(30,30,10,0,7);c.fill()}
+ if(document.activeElement!==$("#bsc")&&sel>=0&&live)$("#bsc").value=100*(live.s&&live.s[sel]!=null?live.s[sel]:1);$("#fr").textContent=Math.round(cur)+"/"+P.len;tline();if(pvOn){pc.setTransform(1/3,0,0,1/3,0,0);paint(pc,cur,1)}}
+function tline(){const W=960,w=W-20,x=f=>10+f/P.len*w;t2.fillStyle=getComputedStyle(document.body).backgroundColor;t2.fillRect(0,0,W,56);t2.strokeStyle="rgba(128,128,128,.5)";t2.fillStyle="rgba(128,128,128,.8)";t2.font="11px sans-serif";
+ for(let f=0;f<=P.len;f++){const m=f%6==0;t2.beginPath();t2.moveTo(x(f),m?34:42);t2.lineTo(x(f),50);t2.stroke();if(f%12==0)t2.fillText(f,x(f)-4,28)}
+ LY.keys.forEach(k=>{const X=x(k.f);t2.fillStyle=k==ks?"#e8603c":"#f0b429";t2.beginPath();t2.moveTo(X,10);t2.lineTo(X+8,18);t2.lineTo(X,26);t2.lineTo(X-8,18);t2.fill()});
+ t2.strokeStyle="#d22";t2.lineWidth=2;t2.beginPath();t2.moveTo(x(cur),2);t2.lineTo(x(cur),54);t2.stroke();t2.lineWidth=1}
+function loop(ts){const dt=Math.min(.1,(ts-last)/1000);last=ts;
+ if(playing){cur+=dt*P.fps*P.speed;if(cur>=P.len){if(loopOn)cur=0;else{cur=P.len-1;stopPlay()}}}
+ if(rec){cur=(ts-rec.t0)/1000*P.fps;if(cur>=P.len){cur=P.len-1;stopRec()}else{const f=Math.floor(cur);if(f%2==0&&f!=rec.lf){rec.lf=f;setKey(f,live)}}}
+ render();requestAnimationFrame(loop)}
+function stopPlay(){playing=false;$("#pl").textContent="▶"}
+function stopRec(){rec=null;$("#rc").textContent="⏺ Rekam";$("#rc").classList.remove("on");snap();toast("Rekaman selesai")}
+const sp=e=>{const r=st.getBoundingClientRect();return[(e.clientX-r.left)*960/r.width,(e.clientY-r.top)*540/r.height]},pt=e=>{const[x,y]=sp(e);return[(x-V.x)/V.z,(y-V.y)/V.z]};
+function zoomAt(f,sx,sy){const z=Math.max(.3,Math.min(6,V.z*f));V.x=sx-(sx-V.x)*z/V.z;V.y=sy-(sy-V.y)*z/V.z;V.z=z}
+const seg=(x,y,q)=>{const dx=q.tx-q.ox,dy=q.ty-q.oy,l=dx*dx+dy*dy||1,t=Math.max(0,Math.min(1,((x-q.ox)*dx+(y-q.oy)*dy)/l));return Math.hypot(x-q.ox-t*dx,y-q.oy-t*dy)};
+function loc(i,mx,my){const q=fk(live)[i],dx=mx-q.ox,dy=my-q.oy;return[dx*Math.cos(q.A)+dy*Math.sin(q.A),-dx*Math.sin(q.A)+dy*Math.cos(q.A)]}
+function solve(i,mx,my){const ch=[i],p=LY.bones[i].p;if(ik&&p>=0){ch.push(p);if(LY.bones[p].p>=0)ch.push(LY.bones[p].p)}
+ for(let n=0;n<8;n++)for(const j of ch){const o=fk(live),q=o[j],e=o[i];live.a[j]+=Math.atan2(my-q.oy,mx-q.ox)-Math.atan2(e.ty-q.oy,e.tx-q.ox)}}
+st.onpointerdown=e=>{st.setPointerCapture(e.pointerId);const[mx,my]=pt(e);if(!live)return;
+ if(tool=="draw"){if(sel<0)return toast("Pilih tulang dulu di mode Pose");const s={c:brush.c,w:brush.w,p:[loc(sel,mx,my)]};LY.bones[sel].st.push(s);drag={k:"dr",s};return}
+ const o=fk(live);
+ if(tool=="bone"){if(!LY.bones.length){drag={k:"nb",p:-1,x0:mx,y0:my,x:mx,y:my};return}let par=sel,bd=1e9;if(par<0)o.forEach((q,i)=>{const d=Math.hypot(mx-q.tx,my-q.ty);if(d<bd){bd=d;par=i}});sel=par;fill();drag={k:"nb",p:par,x:mx,y:my};return}
+ if(o[0]&&Math.hypot(mx-o[0].ox,my-o[0].oy)<16/V.z){drag={k:"root",dx:mx-live.x,dy:my-live.y};return}
+ let bi=-1,bd=18/V.z;o.forEach((q,i)=>{const d=Math.hypot(mx-q.tx,my-q.ty);if(d<bd){bd=d;bi=i}});
+ if(bi<0){bd=10/V.z;o.forEach((q,i)=>{const d=seg(mx,my,q);if(d<bd){bd=d;bi=i}})}
+ if(bi>=0){sel=bi;drag={k:"bone",i:bi};fill()}else{sel=-1;fill()}};
+st.onpointermove=e=>{if(!drag)return;const[mx,my]=pt(e);
+ if(drag.k=="bone"){solve(drag.i,mx,my);key()}else if(drag.k=="root"){live.x=mx-drag.dx;live.y=my-drag.dy;key()}
+ else if(drag.k=="dr"){const s=drag.s,l=loc(sel,mx,my),z=s.p[s.p.length-1];if(Math.hypot(l[0]-z[0],l[1]-z[1])>2)s.p.push(l)}else if(drag.k=="nb"){drag.x=mx;drag.y=my}};
+st.onpointerup=st.onpointercancel=()=>{if(!drag)return;const d=drag;drag=null;
+ if(d.k=="nb"){if(d.p<0){const L=Math.hypot(d.x-d.x0,d.y-d.y0);if(L>8){LY.ox=d.x0;LY.oy=d.y0;addB(-1,L,Math.atan2(d.y-d.y0,d.x-d.x0))}}else{const q=fk(live)[d.p],L=Math.hypot(d.x-q.tx,d.y-q.ty);if(L>8)addB(d.p,L,Math.atan2(d.y-q.ty,d.x-q.tx)-q.A)}}
+ if(!rec)snap()};
+function addB(p,len,a){LY.bones.push({name:"Tulang "+(LY.bones.length+1),p,len,a,w:12,col:"#6b4fbb",shape:"cap",t:1,st:[],el:[]});sel=LY.bones.length-1;fill()}
+function delBone(i){const del=new Set([i]);LY.bones.forEach((b,j)=>{if(del.has(b.p))del.add(j)});const map=[];let n=0;LY.bones.forEach((b,j)=>map[j]=del.has(j)?-1:n++);LY.bones=LY.bones.filter((b,j)=>!del.has(j));LY.bones.forEach(b=>b.p=b.p<0?-1:map[b.p]);LY.keys.forEach(k=>k.a=k.a.filter((_,j)=>!del.has(j)));sel=-1;fill()}
+function tpos(e){const r=tl.getBoundingClientRect();return(e.clientX-r.left)*960/r.width}
+tl.onpointerdown=e=>{tl.setPointerCapture(e.pointerId);const X=tpos(e),x=f=>10+f/P.len*940;ks=LY.keys.find(k=>Math.abs(x(k.f)-X)<12)||null;stopPlay();if(rec)return;if(ks)drag={k:"key"};else{drag={k:"scrub"};cur=Math.max(0,Math.min(P.len-1,Math.round((X-10)/940*P.len)))}};
+tl.onpointermove=e=>{if(!drag)return;const f=Math.max(0,Math.min(P.len-1,Math.round((tpos(e)-10)/940*P.len)));if(drag.k=="scrub")cur=f;else if(drag.k=="key"&&ks&&!LY.keys.some(k=>k!=ks&&k.f==f)){ks.f=f;cur=f;LY.keys.sort((a,b)=>a.f-b.f)}};
+tl.onpointerup=()=>{if(drag&&drag.k=="key")snap();drag=null};
+function snap(){hist=hist.slice(0,hi+1);hist.push(JSON.stringify(P));if(hist.length>60)hist.shift();hi=hist.length-1;LS.s("anim:auto",pj())}
+function goto(i){if(i<0||i>=hist.length)return;hi=i;setP(JSON.parse(hist[i]));ks=null;fill();LS.s("anim:auto",pj())}
+function fill(){const b=LY.bones[sel],on=!!b;["bn","bl","bz","bt","bcl","bs","bd"].forEach(i=>$("#"+i).disabled=!on);if(on){$("#bn").value=b.name;$("#bl").value=b.len;$("#bz").value=b.w;$("#bt").value=b.t;$("#bcl").value=b.col;$("#bs").value=b.shape}
+ $("#nm").value=P.name;$("#bgc").value=P.bg;$("#es").value=P.ease;$("#sp").value=P.speed;$("#fp").value=P.fps;$("#ln").value=P.len;
+ const l=LS.k().filter(k=>k.startsWith("anim:p:"));layersUI();shapesUI();$("#pls").innerHTML=l.map(k=>"<option>"+k.slice(7).replace(/</g,"&lt;")+"</option>").join("")||"<option value=''>(belum ada)</option>"}
+const mark=(q,b)=>{document.querySelectorAll(q).forEach(x=>x.classList.remove("on"));b.classList.add("on")};
+document.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{tool=b.dataset.t;mark("[data-t]",b)});
+function openTab(id){const b=document.querySelector(`[data-p="${id}"]`);if(b)mark("[data-p]",b);document.querySelectorAll(".pn").forEach(p=>p.classList.toggle("on",p.id==id))}
+document.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>openTab(b.dataset.p));
+$("#aib").onclick=()=>openTab("p7");
+document.querySelectorAll("[data-tp]").forEach(b=>b.onclick=()=>{const t=TP[b.dataset.tp]().layers[0];LY.bones=t.bones;LY.keys=[];LY.ox=t.ox;LY.oy=t.oy;sel=LY.bones.length?0:-1;cur=0;ks=null;stopPlay();snap();fill();toast(b.textContent.slice(2)+" dimuat ke layer ini")});
+const tog=(id,f)=>$(id).onclick=function(){this.classList.toggle("on");f(this.classList.contains("on"))};
+tog("#ikb",v=>ik=v);tog("#onb",v=>onion=v);tog("#grb",v=>grid=v);tog("#lp",v=>loopOn=v);
+$("#pl").onclick=()=>{if(rec)return;playing=!playing;if(playing&&cur>=P.len-1)cur=0;$("#pl").textContent=playing?"⏸":"▶"};
+$("#rc").onclick=()=>{if(rec)return stopRec();if(!LY.bones.length)return toast("Buat karakter dulu");stopPlay();cur=0;LY.keys=[];rec={t0:performance.now(),lf:-1};$("#rc").textContent="⏹ Stop";$("#rc").classList.add("on");toast("Merekam: gerakkan tulang sekarang")};
+$("#ka").onclick=()=>{if(live){key();snap()}};
+$("#kd").onclick=()=>{const k=ks||LY.keys.find(k=>k.f==Math.round(cur));if(k){LY.keys=LY.keys.filter(x=>x!=k);ks=null;snap()}};
+$("#un").onclick=()=>goto(hi-1);$("#re").onclick=()=>goto(hi+1);
+$("#nm").oninput=e=>P.name=e.target.value;$("#nm").onchange=snap;
+$("#bgc").oninput=e=>P.bg=e.target.value;$("#bgc").onchange=snap;
+$("#bc").oninput=e=>brush.c=e.target.value;$("#bw").oninput=e=>brush.w=+e.target.value;
+$("#cs").onclick=()=>{if(sel>=0){LY.bones[sel].st=[];snap()}};
+const bp=(id,k,cv)=>{$(id).oninput=e=>{if(sel>=0)LY.bones[sel][k]=cv(e.target.value)};$(id).onchange=snap};
+bp("#bn","name",v=>v);bp("#bl","len",Number);bp("#bz","w",Number);bp("#bt","t",Number);bp("#bcl","col",v=>v);bp("#bs","shape",v=>v);
+$("#bd").onclick=()=>{if(sel>=0){delBone(sel);snap()}};
+$("#es").onchange=e=>{P.ease=+e.target.value;snap()};$("#sp").onchange=e=>P.speed=+e.target.value;$("#fp").onchange=e=>{P.fps=+e.target.value;snap()};
+$("#ln").onchange=e=>{P.len=Math.max(8,Math.min(600,+e.target.value||48));cur=Math.min(cur,P.len-1);snap()};
+$("#ca").onclick=()=>{LY.keys=[];ks=null;snap()};
+const ix=n=>LY.bones.findIndex(b=>b.name==n);
+function preset(k){if(ix("Paha A")<0||ix("Lengan A")<0)return toast("Preset butuh template Manusia atau Robot");
+ const keys=[],off=Math.round(cur),add=(f,dy,o)=>{const a=LY.bones.map(b=>b.a);for(const n in o){const i=ix(n);if(i>=0)a[i]+=o[n]*D}keys.push({f,a,x:LY.ox,y:LY.oy+dy})};let n=49;
+ if(k=="jalan"){for(let i=0;i<5;i++){const th=i*Math.PI/2,s=Math.sin(th);add(i*12,-5*Math.abs(s),{"Paha A":-28*s,"Paha B":28*s,"Betis A":Math.max(0,Math.cos(th+.8))*35,"Betis B":Math.max(0,Math.cos(th+Math.PI+.8))*35,"Lengan A":24*s,"Lengan B":-24*s,"Badan":2})}}
+ else if(k=="lambai"){n=37;[0,35,-35,35,0].forEach((v,i)=>add(i*9,0,{"Lengan B":-130,"Siku B":v}))}
+ else if(k=="lompat"){n=37;add(0,0,{});add(8,12,{"Paha A":-35,"Paha B":-35,"Betis A":70,"Betis B":70});add(16,-60,{"Paha A":-20,"Paha B":-20,"Betis A":40,"Betis B":40,"Lengan A":140,"Lengan B":-140});add(24,8,{"Paha A":-35,"Paha B":-35,"Betis A":70,"Betis B":70});add(36,0,{})}
+ else[0,1,0].forEach((v,i)=>add(i*24,-3*v,{"Badan":2*v,"Kepala":-3*v,"Lengan A":4*v,"Lengan B":-4*v}));
+ keys.forEach(K=>{K.f+=off;const q=LY.keys.findIndex(x=>x.f==K.f);if(q>=0)LY.keys[q]=K;else LY.keys.push(K)});LY.keys.sort((a,b)=>a.f-b.f);P.len=Math.max(P.len,off+n);ks=null;snap();fill();playing=true;$("#pl").textContent="⏸";toast("Preset ditimpa mulai frame "+off+". Kunci lain tetap")}
+function spring(){if(sel<0||!LY.keys.length)return toast("Pilih tulang dan buat animasi dulu");let th=ev(0).a[sel],w=0;const out=[];for(let f=0;f<P.len;f++){const po=ev(f),d=((po.a[sel]-th+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;w+=.35*d-.18*w;th+=w;po.a[sel]=th;out.push(po)}out.forEach((po,f)=>setKey(f,po));snap();toast("Pegas diterapkan ke "+LY.bones[sel].name)}
+function mirror(){LY.bones.forEach(b=>{b.a=b.p<0?Math.PI-b.a:-b.a;b.st.forEach(s=>s.p.forEach(q=>q[1]=-q[1]));b.el.forEach(e=>{e.y=-e.y;e.r=-e.r})});LY.keys.forEach(k=>k.a=k.a.map((a,i)=>LY.bones[i].p<0?Math.PI-a:-a));snap();toast("Karakter dibalik")}
+function pathGo(q){const L0=P.len,off=Math.round(cur),cum=[0];for(let i=1;i<q.length;i++)cum[i]=cum[i-1]+Math.hypot(q[i][0]-q[i-1][0],q[i][1]-q[i-1][1]);const L=cum[q.length-1],D=Math.max(8,Math.round(L/5)),base=[];for(let f=0;f<L0;f++)base[f]=ev(f);
+ for(let f=0;f<=D;f+=2){const t=L*f/D;let i=1;while(i<q.length-1&&cum[i]<t)i++;const u=(t-cum[i-1])/((cum[i]-cum[i-1])||1),po={...base[f%L0]};po.a=[...po.a];po.x=q[i-1][0]+(q[i][0]-q[i-1][0])*u;po.y=q[i-1][1]+(q[i][1]-q[i-1][1])*u;setKey(off+f,po)}
+ P.len=Math.max(P.len,off+D+1);snap();toast("Karakter mengikuti jalur ("+D+" frame)")}
+$("#spr").onclick=spring;$("#mir").onclick=mirror;$("#lpm").onclick=()=>{if(!LY.keys.length)return;setKey(P.len-1,ev(0));snap();toast("Loop dibuat mulus")};
+const NM={img:"Foto",rect:"Kotak",circ:"Lingkaran",tri:"Segitiga",star:"Bintang",dia:"Belah ketupat",hex:"Segi enam"},SE=()=>{const b=LY.bones[sel];return b&&seb==sel?b.el[se]||null:null};
+const elT=(i,E,o=fk(live))=>{const q=o[i],c1=Math.cos(q.A),s1=Math.sin(q.A);return{cx:q.ox+(E.x*c1-E.y*s1)*q.S,cy:q.oy+(E.x*s1+E.y*c1)*q.S,A:q.A+E.r,s:q.S}};
+const w2=(T,x,y)=>[T.cx+(x*Math.cos(T.A)-y*Math.sin(T.A))*T.s,T.cy+(x*Math.sin(T.A)+y*Math.cos(T.A))*T.s];
+const hdl=(T,E)=>{const a=w2(T,0,-E.h/2-26/(V.z*T.s)),b=w2(T,E.w/2,E.h/2);return{rx:a[0],ry:a[1],sx:b[0],sy:b[1]}};
+function shapeDown(e){const[mx,my]=pt(e),R=14/V.z,o=fk(live);st.setPointerCapture(e.pointerId);const E0=SE();
+ if(E0){const hh=hdl(elT(sel,E0,o),E0);if(Math.hypot(mx-hh.rx,my-hh.ry)<R){drag={k:"er"};return true}if(Math.hypot(mx-hh.sx,my-hh.sy)<R){drag={k:"es"};return true}}
+ for(let i=LY.bones.length-1;i>=0;i--){const bb=LY.bones[i];for(let j=bb.el.length-1;j>=0;j--){const E=bb.el[j],T=elT(i,E,o),dx=mx-T.cx,dy=my-T.cy,ca=Math.cos(-T.A),sa=Math.sin(-T.A);if(Math.abs((dx*ca-dy*sa)/T.s)<=E.w/2&&Math.abs((dx*sa+dy*ca)/T.s)<=E.h/2){sel=i;se=j;seb=i;fill();drag={k:"em",ox:mx,oy:my,x0:E.x,y0:E.y};return true}}}
+ se=-1;fill();return false}
+function shapeMove(e){const[mx,my]=pt(e),E=SE();if(!E)return;const o=fk(live)[sel],d=drag;
+ if(d.k=="em"){const dx=mx-d.ox,dy=my-d.oy,c1=Math.cos(-o.A),s1=Math.sin(-o.A);E.x=d.x0+(dx*c1-dy*s1)/o.S;E.y=d.y0+(dx*s1+dy*c1)/o.S}
+ else{const T=elT(sel,E);if(d.k=="er")E.r=Math.atan2(my-T.cy,mx-T.cx)-o.A+Math.PI/2;else{const dx=mx-T.cx,dy=my-T.cy,c1=Math.cos(-T.A),s1=Math.sin(-T.A);E.w=Math.max(4,2*Math.abs((dx*c1-dy*s1)/o.S));E.h=Math.max(4,2*Math.abs((dx*s1+dy*c1)/o.S))}}}
+function shapesUI(){const b=LY.bones[sel],E=SE();$("#ell").innerHTML=b?b.el.map((e,i)=>`<button data-ei="${i}" class="${E===e?"on":""}">${i+1}. ${NM[e.t]}</button>`).join(""):"";["er","ew","eh","edu","eup","edn","edl"].forEach(i=>$("#"+i).disabled=!E);if(E){$("#ecl").value=E.col;$("#er").value=Math.round(E.r/D);$("#ew").value=E.w;$("#eh").value=E.h}}
+const IMGS={},pc=$("#pv").getContext("2d");
+const imgOf=id=>{const r=IMGS[id];if(!r)return null;if(!r.im){r.im=new Image();r.im.src=r.url}return r.im.complete&&r.im.naturalWidth?r.im:null};
+function pj(){const u={};P.layers.forEach(l=>l.bones.forEach(b=>b.el.forEach(e=>{if(e.t=="img"&&IMGS[e.src])u[e.src]=IMGS[e.src].url})));return JSON.stringify({...P,imgs:u})}
+function addEl(o){if(!LY.bones.length){LY.bones.push({name:"Badan",p:-1,len:60,a:-Math.PI/2,w:10,col:"#888888",shape:"none",t:1,st:[],el:[]});LY.ox=480;LY.oy=330;sel=0}if(sel<0)sel=0;const bn=LY.bones[sel];bn.el.push({x:bn.len/2,y:0,r:0,w:44,h:44,col:$("#ecl").value,...o});se=bn.el.length-1;seb=sel;tool="shape";mark("[data-t]",document.querySelector('[data-t="shape"]'));snap();fill();toast("Ditambahkan. Seret untuk geser, titik atas memutar, titik sudut mengubah ukuran")}
+document.querySelectorAll("[data-sh]").forEach(b=>b.onclick=()=>addEl({t:b.dataset.sh}));
+$("#imb").onclick=()=>$("#imgf").click();
+$("#imgf").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,400/Math.max(im.width,im.height)),cv=document.createElement("canvas");cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);cv.getContext("2d").drawImage(im,0,0,cv.width,cv.height);const id="i"+Date.now(),m=120/Math.max(cv.width,cv.height);IMGS[id]={url:cv.toDataURL(f.type=="image/jpeg"?"image/jpeg":"image/png",.85)};addEl({t:"img",src:id,w:cv.width*m,h:cv.height*m})};im.onerror=()=>toast("Gambar tidak bisa dibuka");im.src=r.result};r.readAsDataURL(f)};
+$("#pvb").onclick=()=>{pvOn=!pvOn;$("#pv").style.display=pvOn?"block":"none";$("#pvb").classList.toggle("on",pvOn)};$("#pv").style.display="block";
+function fit(){const w=$("#cvw"),m=$("#main");let o=0;for(const ch of m.children)if(ch!==w)o+=ch.offsetHeight+8;const aw=m.clientWidth-16,ah=Math.max(140,innerHeight-o-24),k=Math.max(.1,Math.min(aw/960,ah/540));st.style.width=Math.floor(960*k)+"px";st.style.height=Math.floor(540*k)+"px"}
+addEventListener("resize",fit);addEventListener("orientationchange",()=>setTimeout(fit,250));setTimeout(fit,0);setTimeout(fit,400);fit();
+$("#ell").onclick=e=>{const b=e.target.closest("button");if(b){se=+b.dataset.ei;seb=sel;shapesUI()}};
+$("#ecl").oninput=e=>{const E=SE();if(E)E.col=e.target.value};$("#ecl").onchange=snap;
+$("#er").oninput=e=>{const E=SE();if(E)E.r=e.target.value*D};$("#ew").oninput=e=>{const E=SE();if(E)E.w=+e.target.value};$("#eh").oninput=e=>{const E=SE();if(E)E.h=+e.target.value};["#er","#ew","#eh"].forEach(i=>$(i).onchange=snap);
+$("#edu").onclick=()=>{const E=SE();if(!E)return;const b=LY.bones[sel];b.el.push({...E,x:E.x+12,y:E.y+12});se=b.el.length-1;snap();fill()};
+$("#eup").onclick=()=>{const b=LY.bones[sel];if(SE()&&se<b.el.length-1){[b.el[se],b.el[se+1]]=[b.el[se+1],b.el[se]];se++;snap();fill()}};
+$("#edn").onclick=()=>{const b=LY.bones[sel];if(SE()&&se>0){[b.el[se],b.el[se-1]]=[b.el[se-1],b.el[se]];se--;snap();fill()}};
+$("#edl").onclick=()=>{if(SE()){LY.bones[sel].el.splice(se,1);se=-1;snap();fill()}};
+$("#bsc").oninput=e=>{if(sel<0||!live)return;live.s=live.s||[];live.s[sel]=e.target.value/100;key()};$("#bsc").onchange=snap;
+const od=st.onpointerdown,om=st.onpointermove,ou=st.onpointerup;
+st.onpointerdown=e=>{pts.set(e.pointerId,sp(e));if(pts.size==2){drag=null;pin=null;return}
+ if(tool=="pan"){st.setPointerCapture(e.pointerId);const[x,y]=sp(e);drag={k:"pan",x,y};return}
+ if(tool=="path"){st.setPointerCapture(e.pointerId);drag={k:"path",p:[pt(e)]};return}if(tool=="shape"&&shapeDown(e))return;od(e)};
+st.onpointermove=e=>{if(pts.has(e.pointerId))pts.set(e.pointerId,sp(e));
+ if(pts.size==2){const[a,b]=[...pts.values()],d=Math.hypot(a[0]-b[0],a[1]-b[1]),cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2;if(pin){zoomAt(d/pin.d,cx,cy);V.x+=cx-pin.cx;V.y+=cy-pin.cy}pin={d,cx,cy};return}
+ if(drag&&drag.k=="pan"){const[x,y]=sp(e);V.x+=x-drag.x;V.y+=y-drag.y;drag.x=x;drag.y=y;return}
+ if(drag&&drag.k=="path"){drag.p.push(pt(e));return}if(drag&&/^e[mrs]$/.test(drag.k)){shapeMove(e);return}om(e)};
+st.onpointerup=st.onpointercancel=e=>{pts.delete(e.pointerId);if(pts.size<2)pin=null;if(drag&&drag.k=="pan"){drag=null;return}if(drag&&drag.k=="path"){const q=drag.p;drag=null;if(q.length>3)pathGo(q);return}const sh=drag&&/^e[mrs]$/.test(drag.k);ou(e);if(sh)fill()};
+st.onwheel=e=>{e.preventDefault();const[x,y]=sp(e);zoomAt(e.deltaY<0?1.15:.87,x,y)};
+$("#zi").onclick=()=>zoomAt(1.25,480,270);$("#zo").onclick=()=>zoomAt(.8,480,270);$("#zr").onclick=()=>V={z:1,x:0,y:0};
+$("#fs").onclick=()=>{document.body.classList.toggle("fs");$("#fs").textContent=document.body.classList.contains("fs")?"✕":"⛶";fit()};
+function layersUI(){$("#lyl").innerHTML=P.layers.map((l,i)=>`<div class="row"><button data-lv="${i}">${l.vis?"👁":"🚫"}</button><button data-ls="${i}" class="${i==li?"on":""}" style="flex:1;text-align:left">${l.name.replace(/</g,"&lt;")}</button><button data-lu="${i}">⬆</button><button data-ld="${i}">⬇</button></div>`).join("");$("#lnm").value=LY.name}
+$("#lyl").onclick=e=>{const b=e.target.closest("button");if(!b)return;const d=b.dataset;
+ if(d.lv!=null)P.layers[+d.lv].vis^=1;else if(d.ls!=null){li=+d.ls;LY=P.layers[li];sel=LY.bones.length?0:-1;ks=null}
+ else{const i=+(d.lu??d.ld),j=i+(d.lu!=null?1:-1);if(j<0||j>=P.layers.length)return;[P.layers[i],P.layers[j]]=[P.layers[j],P.layers[i]];if(li==i)li=j;else if(li==j)li=i;LY=P.layers[li]}snap();fill()};
+$("#la").onclick=()=>{P.layers.push(NL("Layer "+(P.layers.length+1)));li=P.layers.length-1;LY=P.layers[li];sel=-1;ks=null;snap();fill()};
+$("#lc").onclick=()=>{const d=JSON.parse(JSON.stringify(LY));d.name+=" salinan";d.ox+=60;d.keys.forEach(k=>k.x+=60);P.layers.splice(li+1,0,d);li++;LY=d;snap();fill()};
+$("#lx").onclick=()=>{if(P.layers.length<2)return toast("Minimal satu layer");P.layers.splice(li,1);li=Math.max(0,li-1);LY=P.layers[li];sel=-1;ks=null;snap();fill()};
+$("#lnm").oninput=e=>LY.name=e.target.value;$("#lnm").onchange=()=>{snap();layersUI()};
+document.querySelectorAll("[data-pr]").forEach(b=>b.onclick=()=>preset(b.dataset.pr));
+$("#sv").onclick=()=>{LS.s("anim:p:"+P.name,pj());fill();$("#pls").value=P.name;toast("Proyek disimpan")};
+$("#ld").onclick=()=>{const v=LS.g("anim:p:"+$("#pls").value);if(!v)return;setP(JSON.parse(v));sel=LY.bones.length?0:-1;cur=0;ks=null;stopPlay();snap();fill();toast("Proyek dimuat")};
+$("#dl").onclick=()=>{LS.d("anim:p:"+$("#pls").value);fill()};
+$("#nw").onclick=()=>{setP(blank());sel=-1;cur=0;ks=null;stopPlay();snap();fill()};
+function save(name,blob){if(dl)dl.save({filename:name,data:blob}).then(()=>toast("Tersimpan")).catch(e=>toast(e&&e.code=="declined"?"Dibatalkan":"Gagal menyimpan"));else{const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click()}}
+const fn=()=>(P.name||"animasi").replace(/[^\w-]+/g,"_");
+$("#xj").onclick=()=>save(fn()+".json",new Blob([pj()],{type:"application/json"}));
+$("#impb").onclick=()=>$("#imp").click();
+$("#imp").onchange=e=>{const f=e.target.files[0];e.target.value="";if(!f)return;
+ const rd=f.text?f.text():new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsText(f)});
+ rd.then(t=>{const j=JSON.parse(t);if(!(Array.isArray(j.layers)||(Array.isArray(j.bones)&&Array.isArray(j.keys))))throw new Error("format");setP(up(j));sel=LY.bones.length?0:-1;cur=0;ks=null;stopPlay();snap();fill();toast("Proyek diimpor: "+(P.name||"tanpa nama"))}).catch(()=>toast("File proyek tidak valid"))};
+function clean(po){const ex=document.createElement("canvas");ex.width=960;ex.height=540;const ec=ex.getContext("2d");paint(ec,po);return[ex,ec]}
+function paint(ec,f,lv){const o=c;c=ec;try{ec.fillStyle=P.bg;ec.fillRect(0,0,960,540);P.layers.forEach(l=>l.vis&&withL(l,()=>body(lv&&l===LY&&live?live:ev(f),1)))}finally{c=o}}
+$("#xp").onclick=()=>{const[ex]=clean(cur);ex.toBlob(b=>save(fn()+".png",b))};
+let xb=false;
+$("#xv").onclick=()=>{if(xb)return;if(!P.layers.some(l=>l.keys.length)||!window.MediaRecorder)return toast(P.layers.some(l=>l.keys.length)?"Perekam video tidak didukung":"Belum ada animasi");
+ const[ex,ec]=clean(0),ch=[],mt=MediaRecorder.isTypeSupported("video/webm;codecs=vp9")?"video/webm;codecs=vp9":"video/webm",mr=new MediaRecorder(ex.captureStream(P.fps),{mimeType:mt}),dt=1000/P.fps/P.speed,btn=$("#xv");
+ mr.ondataavailable=e=>ch.push(e.data);mr.onstop=()=>{xb=false;btn.textContent="🎬 Ekspor video";save(fn()+".webm",new Blob(ch,{type:"video/webm"}))};
+ xb=true;let f=0;mr.start();const iv=setInterval(()=>{paint(ec,f);btn.textContent="Merekam "+Math.round(f/P.len*100)+"%";f++;if(f>=P.len){clearInterval(iv);setTimeout(()=>mr.stop(),dt+150)}},dt)};
+addEventListener("keydown",e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;if(e.code=="Space"){e.preventDefault();$("#pl").click()}else if(e.key=="k")$("#ka").click();else if(e.key=="Delete")$("#kd").click();else if((e.ctrlKey||e.metaKey)&&e.key=="z"){e.preventDefault();goto(hi-1)}else if((e.ctrlKey||e.metaKey)&&e.key=="y"){e.preventDefault();goto(hi+1)}});
+
+// === INTEGRASI GEMINI AI ===
+$("#gkey").value=LS.g("anim:gkey")||"";
+$("#gkey").onchange=e=>LS.s("anim:gkey",e.target.value.trim());
+
+$("#ggen").onclick=async()=>{
+  const key=$("#gkey").value.trim();
+  const prompt=$("#gprompt").value.trim();
+  const mode=$("#gmode").value;
+  if(!key)return toast("Masukkan Gemini API Key terlebih dahulu");
+  if(!prompt)return toast("Tulis perintah animasi/model dulu");
+  if(mode=="anim"&&!LY.bones.length)return toast("Layer ini belum memiliki tulang untuk dianimasikan");
+
+  const btn=$("#ggen"),oldText=btn.textContent;
+  btn.disabled=true;btn.textContent="⏳ Sedang merancang...";
+  stopPlay();
+
+  const existingBones=LY.bones.map((b,i)=>({index:i,name:b.name,parent:b.p,defaultDeg:Math.round(b.a/D)}));
+  const sysPrompt=`Kamu adalah pembuat rig animasi 2D skeletal. Canvas berukuran 960x540 (tengah: x=480, y=300).
+Sistem koordinat tulang:
+- Bone 0 (root) punya p: -1. Posisi pangkalnya ada di (ox, oy).
+- Bone lainnya terhubung ke parent index 'p' (harus < index tulang saat ini).
+- 't' (0.0 - 1.0) adalah titik sambung di sepanjang tulang induk (1 = ujung, 0 = pangkal).
+- Sudut 'aDeg' dalam DERAJAT (0 = kanan, 90 = bawah, -90 = atas, 180 = kiri). Untuk anak tulang (p >= 0), 'aDeg' adalah sudut RELATIF terhadap induknya.
+- 'shape': "cap" (kapsul), "circ" (lingkaran), "rect" (kotak), "none".
+- 'el': bentuk tambahan pada tulang, array of {t: "rect"|"circ"|"tri"|"star"|"dia"|"hex", x, y, rDeg, w, h, col}.
+- 'keys': array keyframe animasi {f: nomor_frame (0 sampai len-1), x: pos_root_x, y: pos_root_y, aDeg: [array sudut derajat semua tulang berurutan]}. Buat minimal 4-8 keyframe yang mulus dan ekspresif (termasuk gerakan sekunder).
+
+${mode=="anim"
+  ? `MODE: Animasikan tulang yang sudah ada ini: ${JSON.stringify(existingBones)}. Posisi awal root: ox=${LY.ox}, oy=${LY.oy}. Kembalikan JSON dengan properti: "len" (jumlah frame, misal 48-96) dan "keys". Jangan ubah struktur tulang.`
+  : `MODE: Buat model karakter baru lengkap dengan tulang, bentuk detail (mata, telinga, aksesori di properti 'el'), warna menarik, dan animasinya. Kembalikan JSON dengan properti: "name", "bg" (warna hex latar yang kontras), "len" (jumlah frame, misal 48-96), "ox", "oy", "bones", dan "keys".`}
+
+Format JSON ketat tanpa markdown:
+{
+  "name": "Nama Proyek",
+  "bg": "#fbf8f1",
+  "len": 60,
+  "ox": 480,
+  "oy": 300,
+  "bones": [
+    {"name": "Badan", "p": -1, "len": 70, "aDeg": -90, "w": 30, "col": "#4f8cff", "shape": "cap", "t": 1, "el": []}
+  ],
+  "keys": [
+    {"f": 0, "x": 480, "y": 300, "aDeg": [-90]}
+  ]
+}`;
+
+  try{
+    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        contents:[{parts:[{text:sysPrompt+"\n\nPermintaan pengguna: "+prompt}]}],
+        generationConfig:{responseMimeType:"application/json",temperature:0.7}
+      })
+    });
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const raw=data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(!raw)throw new Error("Respons kosong dari AI");
+    const j=JSON.parse(raw);
+
+    if(mode=="both"&&Array.isArray(j.bones)&&j.bones.length){
+      if(j.name)P.name=j.name;
+      if(j.bg)P.bg=j.bg;
+      LY.ox=Number(j.ox)||480;
+      LY.oy=Number(j.oy)||300;
+      LY.bones=j.bones.map((b,idx)=>({
+        name:b.name||"Tulang "+(idx+1),
+        p:typeof b.p=="number"&&b.p<idx?b.p:-1,
+        len:Math.max(5,Number(b.len)||40),
+        a:(Number(b.aDeg)||0)*D,
+        w:Math.max(2,Number(b.w)||14),
+        col:b.col||"#4f8cff",
+        shape:["cap","circ","rect","none"].includes(b.shape)?b.shape:"cap",
+        t:b.t!=null?Math.max(0,Math.min(1,Number(b.t))):1,
+        st:[],
+        el:Array.isArray(b.el)?b.el.map(e=>({
+          t:["rect","circ","tri","star","dia","hex"].includes(e.t)?e.t:"circ",
+          x:Number(e.x)||0,
+          y:Number(e.y)||0,
+          r:(Number(e.rDeg)||0)*D,
+          w:Math.max(4,Number(e.w)||20),
+          h:Math.max(4,Number(e.h)||20),
+          col:e.col||"#222222"
+        })):[]
+      }));
+    }
+
+    if(j.len)P.len=Math.max(12,Math.min(300,Math.round(Number(j.len))));
+    if(Array.isArray(j.keys)&&j.keys.length){
+      LY.keys=j.keys.map(k=>({
+        f:Math.max(0,Math.min(P.len-1,Math.round(Number(k.f)||0))),
+        x:k.x!=null?Number(k.x):LY.ox,
+        y:k.y!=null?Number(k.y):LY.oy,
+        a:LY.bones.map((b,i)=>Array.isArray(k.aDeg)&&k.aDeg[i]!=null?Number(k.aDeg[i])*D:b.a)
+      })).sort((a,b)=>a.f-b.f);
+    }
+
+    sel=LY.bones.length?0:-1;
+    cur=0;ks=null;
+    snap();fill();
+    playing=true;$("#pl").textContent="⏸";
+    toast("Berhasil dibuat oleh AI!");
+  }catch(err){
+    console.error(err);
+    toast("Gagal: "+(err.message||"Periksa API Key / koneksi"));
+  }finally{
+    btn.disabled=false;btn.textContent=oldText;
+  }
+};
+
+try{const a=LS.g("anim:auto");setP(a?up(JSON.parse(a)):TP.hum())}catch(e){setP(TP.hum())}
+sel=LY.bones.length?0:-1;snap();fill();requestAnimationFrame(loop);
+if(window.claude&&claude.use)claude.use("downloads").then(d=>dl=d).catch(()=>{});
+</script></body></html>
